@@ -2,3 +2,6 @@
 .tools/
 .data/
 *.log
+
+# Release archives built with git archive
+*.zip
