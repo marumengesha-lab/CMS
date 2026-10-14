@@ -21,6 +21,9 @@ return [
     'app' => [
         'name'         => 'Senbet Maderaja',
         'name_am'      => 'ሰንበት ማደራጃ',
+        // Leave empty to auto-detect the sub-folder the app is served from
+        // (e.g. "/senbet_maderaja" on XAMPP). Set APP_BASE_URL only if your
+        // layout is unusual (an Apache Alias, a reverse proxy, …).
         'base_url'     => getenv('APP_BASE_URL') ?: '',
         'debug'        => (bool) (getenv('APP_DEBUG') ?: false),
         'timezone'     => 'Africa/Addis_Ababa',

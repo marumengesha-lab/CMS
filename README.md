@@ -59,6 +59,11 @@ model with real row-level **data isolation**.
 > `CMS-cline-dhkze91f` — rename it to `senbet_maderaja`.
 > A nested `htdocs\senbet_maderaja\senbet_maderaja\` produces Apache's
 > "The requested URL was not found on this server" (404).
+>
+> The application **auto-detects** the sub-folder it runs in
+> (`base_path_url()` in `src/helpers.php`), so links, form actions and
+> redirects work both in a sub-folder and at the web root. Set `APP_BASE_URL`
+> only for unusual layouts (Apache `Alias`, reverse proxy, …).
 
 ```bash
 # 1. copy the project into the web root
@@ -397,6 +402,9 @@ curl -b jar 'http://localhost/senbet_maderaja/api/index.php?resource=members&id=
 The suites exercise the **real** code against a **real** database — no mocks.
 
 ```bash
+# 17 assertions: base-path / URL detection (sub-folder vs web root)
+php tests/base_path_test.php
+
 # 91 assertions: scope resolution, isolation, escalation, tree maintenance, writes
 DB_HOST=127.0.0.1 DB_NAME=senbet_maderaja DB_USER=root DB_PASS= \
   php tests/run_tests.php
@@ -404,6 +412,14 @@ DB_HOST=127.0.0.1 DB_NAME=senbet_maderaja DB_USER=root DB_PASS= \
 # 33 end-to-end HTTP assertions against a running server
 php -S 127.0.0.1:18080 -t . &
 BASE_URL=http://127.0.0.1:18080 bash tests/http_smoke.sh
+```
+
+The HTTP suite also passes against a sub-folder deployment — start the server
+one level above the project and point `BASE_URL` at it:
+
+```bash
+# folder layout: /srv/www/senbet_maderaja/  ->  http://localhost/senbet_maderaja
+BASE_URL=http://127.0.0.1:18080/senbet_maderaja bash tests/http_smoke.sh
 ```
 
 What the suites prove, among others:

@@ -27,15 +27,73 @@ if (!function_exists('e')) {
     }
 }
 
+if (!function_exists('base_path_url')) {
+    /**
+     * The URL prefix the application is served under, without a trailing
+     * slash. Works whether the project sits at the web root ("") or inside a
+     * sub-folder ("/senbet_maderaja") — which is the normal XAMPP layout.
+     *
+     * Resolution order:
+     *   1. APP_BASE_URL / config app.base_url, when explicitly set
+     *   2. the project folder relative to DOCUMENT_ROOT   (Apache/XAMPP)
+     *   3. the difference between SCRIPT_NAME and SCRIPT_FILENAME
+     *   4. "" (served from the web root) — also the CLI case
+     */
+    function base_path_url(?string $appRoot = null): string
+    {
+        // Read the inputs first so the memo key reflects them: the function
+        // stays correct if the environment changes (and stays unit-testable).
+        // $appRoot exists so the tests can exercise a real XAMPP layout
+        // ("C:/xampp/htdocs/senbet_maderaja") without moving files around.
+        $configured = trim((string) config('app.base_url', ''));
+        $root       = rtrim(str_replace('\\', '/', $appRoot ?? BASE_PATH), '/');
+        $docRoot    = rtrim(str_replace('\\', '/', (string) ($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
+        $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+        $scriptFile = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_FILENAME'] ?? ''));
+
+        static $cache = [];
+        $key = implode('|', [$configured, $root, $docRoot, $scriptName, $scriptFile]);
+        if (isset($cache[$key])) {
+            return $cache[$key];
+        }
+
+        // 1. explicit override wins
+        if ($configured !== '') {
+            return $cache[$key] = '/' . trim(str_replace('\\', '/', $configured), '/');
+        }
+
+        // 2. project folder relative to the document root  (Apache / XAMPP)
+        if ($docRoot !== '' && strncasecmp($root . '/', $docRoot . '/', strlen($docRoot) + 1) === 0) {
+            return $cache[$key] = rtrim(substr($root, strlen($docRoot)), '/');
+        }
+
+        // 3. derive it from the running script
+        if ($scriptName !== '' && $scriptFile !== ''
+            && strncasecmp($scriptFile, $root . '/', strlen($root) + 1) === 0) {
+            $relative = substr($scriptFile, strlen($root));   // e.g. /admin/users.php
+            if (str_ends_with($scriptName, $relative)) {
+                return $cache[$key] = rtrim(substr($scriptName, 0, strlen($scriptName) - strlen($relative)), '/');
+            }
+        }
+
+        // 4. web root, or running from the CLI
+        return $cache[$key] = '';
+    }
+}
+
 if (!function_exists('url')) {
     /**
-     * Build an absolute-path URL. Pages pass the path relative to the web
-     * root, e.g. url('admin/roles.php').
+     * Build a URL for a path relative to the application root, e.g.
+     * url('admin/roles.php') -> "/senbet_maderaja/admin/roles.php".
      */
     function url(string $path = ''): string
     {
-        $base = rtrim((string) config('app.base_url', ''), '/');
+        $base = base_path_url();
         $path = ltrim($path, '/');
+
+        if ($path === '') {
+            return $base === '' ? '/' : $base . '/';
+        }
         return $base . '/' . $path;
     }
 }
@@ -62,7 +120,7 @@ if (!function_exists('current_path')) {
     function current_path(): string
     {
         $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
-        $base   = rtrim((string) config('app.base_url', ''), '/');
+        $base   = base_path_url();
         if ($base !== '' && str_starts_with($script, $base)) {
             $script = substr($script, strlen($base));
         }

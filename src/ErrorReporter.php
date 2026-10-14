@@ -54,6 +54,10 @@ class ErrorReporter
         }
         $title = HttpError::defaultMessage($status);
         $msg   = e($e->getMessage());
+
+        // asset() uses the auto-detected base path, so error pages render
+        // correctly even when the app lives in a sub-folder.
+        $GLOBALS['__asset_css'] = asset('css/style.css');
         $link  = $status === 401 ? '<p><a class="btn" href="' . e(url('login.php')) . '">Go to login</a></p>' : '';
         $trace = $debug ? '<pre class="trace">' . e($e->getTraceAsString()) . '</pre>' : '';
         echo <<<HTML
@@ -61,7 +65,7 @@ class ErrorReporter
 <html lang="am"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{$status} {$title}</title>
-<link rel="stylesheet" href="{$GLOBALS['app_config']['app']['base_url']}/assets/css/style.css">
+<link rel="stylesheet" href="{$GLOBALS['__asset_css']}">
 </head><body class="error-page">
 <div class="error-card">
   <div class="error-code">{$status}</div>
