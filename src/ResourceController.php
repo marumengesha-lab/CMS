@@ -19,10 +19,7 @@ final class ResourceController extends Controller
     /** Resolve the permission code required for an action on a resource. */
     public function permissionFor(array $def, string $action): string
     {
-        if (!empty($def['manage_suffix'])) {
-            return $def['permission'] . '.' . $def['manage_suffix'];
-        }
-        return $def['permission'] . '.' . $action;
+        return ResourceRegistry::permissionFor($def, $action);
     }
 
     /**

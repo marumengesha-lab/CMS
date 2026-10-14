@@ -81,6 +81,24 @@ final class ResourceRegistry
         return $def;
     }
 
+    /** The permission code required to perform $action on the resource. */
+    public static function permissionFor(array $def, string $action): string
+    {
+        if (!empty($def['manage_suffix'])) {
+            return $def['permission'] . '.' . $def['manage_suffix'];
+        }
+        return $def['permission'] . '.' . $action;
+    }
+
+    /** Web path of the page that renders the resource. */
+    public static function pageUrl(string $key): string
+    {
+        $def = self::get($key);
+        return ($def['group'] ?? 'modules') === 'academics'
+            ? 'modules/acadamics/' . $key . '.php'
+            : 'modules/' . $key . '.php';
+    }
+
     /** Keys grouped for the navigation menu. */
     public static function grouped(): array
     {

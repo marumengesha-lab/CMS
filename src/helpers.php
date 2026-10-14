@@ -210,3 +210,62 @@ if (!function_exists('validate_required')) {
     }
 }
 
+if (!function_exists('layout_header')) {
+    /**
+     * Open the page shell (doctype, top bar, sidebar, breadcrumbs, flashes).
+     *
+     * @param array $opts title, breadcrumbs, actions, active
+     */
+    function layout_header(array $opts = []): void
+    {
+        echo view('_header', $opts);
+    }
+}
+
+if (!function_exists('layout_footer')) {
+    function layout_footer(): void
+    {
+        echo view('_footer', []);
+    }
+}
+
+if (!function_exists('flash_html')) {
+    /** Render queued flash messages. */
+    function flash_html(): string
+    {
+        $html = '';
+        foreach (Session::takeFlashes() as $flash) {
+            $type = preg_replace('/[^a-z]/', '', strtolower((string) $flash['type'])) ?: 'info';
+            $html .= '<div class="flash flash--' . e($type) . '">' . e($flash['message']) . '</div>';
+        }
+        return $html;
+    }
+}
+
+if (!function_exists('badge')) {
+    function badge(string $text, string $tone = 'neutral'): string
+    {
+        return '<span class="badge badge--' . e($tone) . '">' . e($text) . '</span>';
+    }
+}
+
+if (!function_exists('status_tone')) {
+    function status_tone(?string $status): string
+    {
+        return match ($status) {
+            'active', 'issued', 'approved', 'open', 'in_use' => 'ok',
+            'draft', 'pending', 'stored'                     => 'warn',
+            'inactive', 'suspended', 'closed', 'revoked',
+            'archived', 'disposed', 'ended', 'withdrawn'    => 'muted',
+            default                                           => 'neutral',
+        };
+    }
+}
+
+if (!function_exists('money')) {
+    function money(float|int|string|null $value): string
+    {
+        return number_format((float) $value, 2);
+    }
+}
+
