@@ -5,10 +5,10 @@ model with real row-level **data isolation**.
 
 | | |
 |---|---|
-| Stack | PHP 8.1+ · MySQL 5.7+ / MariaDB 10.2+ · PDO · vanilla HTML/CSS/JS (no build step) |
+| Stack | **PHP 8.0+** · MySQL 5.7+ / MariaDB 10.2+ · PDO · vanilla HTML/CSS/JS (no build step) |
 | Runs on | XAMPP / WAMP / LAMP — just drop the folder in `htdocs` |
 | Deliverables | 1) database schema 2) SQL + middleware/policy isolation logic 3) CRUD API + controllers |
-| Verified | 91 database integration assertions + 33 HTTP end-to-end assertions, all green |
+| Verified | 91 database integration assertions + 33 HTTP end-to-end assertions, green on **PHP 8.0.30 and PHP 8.3.32** against MariaDB 10.11 |
 
 ---
 
@@ -51,6 +51,14 @@ model with real row-level **data isolation**.
 ---
 
 ## 2. Quick start (XAMPP)
+
+> **Folder name matters.** The project must be reachable at
+> `http://localhost/senbet_maderaja/`, i.e. the files (`index.php`, `login.php`,
+> `config/`, `src/` …) must sit **directly** in `C:\xampp\htdocs\senbet_maderaja\`.
+> If you extract the GitHub archive you get a folder called
+> `CMS-cline-dhkze91f` — rename it to `senbet_maderaja`.
+> A nested `htdocs\senbet_maderaja\senbet_maderaja\` produces Apache's
+> "The requested URL was not found on this server" (404).
 
 ```bash
 # 1. copy the project into the web root
@@ -485,3 +493,72 @@ Institution-specific custom roles set `roles.institution_id`.
 * Single-institution membership per user (`users.institution_id`); multi-institution
   staff would need an extra join table.
 * Money values are `DECIMAL` and printed as-is (no currency formatting/localisation).
+
+---
+
+## 11. Troubleshooting
+
+### “Not Found — The requested URL was not found on this server.”
+
+That is **Apache's own 404**, not a PHP error: Apache never found the file. It is
+almost always the folder layout, not the code.
+
+```cmd
+:: 1. is the folder there, with the files directly inside it?
+dir C:\xampp\htdocs\senbet_maderaja\index.php
+dir C:\xampp\htdocs\senbet_maderaja\login.php
+
+:: 2. not sure where it went? search for it
+dir /s /b C:\xampp\htdocs\*login.php
+```
+
+Then fix whichever case you hit:
+
+```cmd
+:: (a) wrong folder name (GitHub archive) -> rename
+move C:\xampp\htdocs\CMS-cline-dhkze91f C:\xampp\htdocs\senbet_maderaja
+
+:: (b) nested by accident -> lift the inner folder up
+move C:\xampp\htdocs\senbet_maderaja\senbet_maderaja C:\xampp\htdocs\_tmp_move
+rmdir C:\xampp\htdocs\senbet_maderaja
+move C:\xampp\htdocs\_tmp_move C:\xampp\htdocs\senbet_maderaja
+```
+
+Use the full URL — `http://localhost/` alone will 404 because `index.php` lives
+one level down:
+
+```
+http://localhost/senbet_maderaja/login.php
+```
+
+If the folder is in the right place but you still get 404, check
+`C:\xampp\apache\conf\httpd.conf` that `DocumentRoot` really is `C:/xampp/htdocs`,
+then restart Apache from the XAMPP Control Panel.
+
+### Quick way to prove the code itself is fine
+
+Bypass Apache entirely with PHP's built-in server:
+
+```cmd
+cd C:\xampp\htdocs\senbet_maderaja
+C:\xampp\php\php.exe -S localhost:8000
+```
+
+Open `http://localhost:8000/login.php`. If that works but Apache 404s, the problem
+is Apache configuration/paths, not the application.
+
+### “Database connection failed”
+
+The app is running but the schema was never imported. Do it once:
+
+```cmd
+cd C:\xampp\htdocs\senbet_maderaja
+C:\xampp\php\php.exe database\install.php
+```
+
+or import `database/integration_schema.sql` in phpMyAdmin.
+
+### Blank page / 500
+
+Set `APP_DEBUG=1` (or `'debug' => true` in `config/config.php`) to see the actual
+message instead of the friendly error page.
